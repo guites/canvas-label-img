@@ -51,16 +51,22 @@ function is_mouse_in_shape(x, y, boundingBox, canvas) {
 function mouse_move(event, canvas, boundingBoxes, ctx, img) {
     if (!is_dragging) return;
     event.preventDefault();
-    const mouseX = parseInt(event.clientX) - parseInt(canvas.offsetLeft);
-    const mouseY = parseInt(event.clientY) - parseInt(canvas.offsetTop);
+    const mouseX = parseInt(event.clientX) - parseInt(canvas.offsetLeft) + window.scrollX;
+    const mouseY = parseInt(event.clientY) - parseInt(canvas.offsetTop) + window.scrollY;
 
-    console.log(mouseX, mouseY);
+    const movedX = startX - mouseX;
+    const movedY = startY - mouseY;
 
     let bnd_box = boundingBoxes[current_bnd_box_index];
-    bnd_box.x = mouseX - ( bnd_box.w / 2 );
-    bnd_box.y = mouseY - ( bnd_box.h / 2 );
+
+    bnd_box.x = bnd_box.x - movedX;
+    bnd_box.y = bnd_box.y - movedY;
 
     renderImg(boundingBoxes, ctx, img);
+
+    // update current mouse position in global state
+    startX = mouseX;
+    startY = mouseY;
 }
 
 function mouse_up(event) {
@@ -76,15 +82,12 @@ function mouse_out(event) {
 }
 
 function mouse_down(event, canvas, boundingBoxes) {
-    // TODO: should consider window.scroll in all events :/ maybe create a handler function?
-    const startX = parseInt(event.clientX) - parseInt(canvas.offsetLeft) + window.scrollX;
-    const startY = parseInt(event.clientY) - parseInt(canvas.offsetTop) + window.scrollY;
-    console.log(startY, window.scrollY);
+    startX = parseInt(event.clientX) - parseInt(canvas.offsetLeft) + window.scrollX;
+    startY = parseInt(event.clientY) - parseInt(canvas.offsetTop) + window.scrollY;
     event.preventDefault();
     let index = 0;
     for (let bndbox of boundingBoxes) {
         if (is_mouse_in_shape(startX, startY, bndbox, canvas)) {
-            console.log(`inside ${bndbox.name}`);
             is_dragging = true;
             current_bnd_box_index = index;
             return;
@@ -129,6 +132,8 @@ const label_url = label_anchor ? label_anchor.href : null;
 
 let is_dragging = false;
 let current_bnd_box_index = null;
+let startX = null;
+let startY = null;
 
 if (label_url) {
     fetch(label_url)
